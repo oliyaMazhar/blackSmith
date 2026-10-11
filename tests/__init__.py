@@ -1,0 +1,1 @@
+"""BlackSmith automated test suite."""

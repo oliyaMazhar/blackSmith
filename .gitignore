@@ -1,0 +1,33 @@
+# Python virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment and secrets
+.env
+*.env
+!.env.example
+
+# IDE & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
