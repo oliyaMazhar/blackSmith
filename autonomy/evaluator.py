@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 from decimal import Decimal
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from autonomy.config import GovernanceConfig, get_governance_config
 from autonomy.context import RiskContext
