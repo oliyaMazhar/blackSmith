@@ -127,6 +127,70 @@ def approve_refund_request(
             return _execute(managed_conn)
 
 
+def reject_refund_request(
+    refund_id: int,
+    reason: str,
+    reviewer: str = "governance_agent",
+    conn=None,
+) -> bool:
+    """Transition a requested or approved refund to 'rejected' status with documented reason."""
+    if not reason or not reason.strip():
+        raise ValueError("A reason is required to reject a refund request.")
+
+    def _execute(connection) -> bool:
+        with get_transaction(connection) as cur:
+            cur.execute(
+                """
+                SELECT status, customer_id, order_id, amount
+                FROM refunds
+                WHERE refund_id = %s
+                FOR UPDATE;
+                """,
+                (refund_id,),
+            )
+            row = cur.fetchone()
+            if not row:
+                raise ValueError(f"Refund #{refund_id} not found.")
+            current_status, customer_id, order_id, amount = row
+            if current_status in ("processed", "executed"):
+                raise RefundTransactionError(f"Cannot reject refund #{refund_id} that has already been executed.")
+
+            cur.execute(
+                """
+                UPDATE refunds
+                SET status = 'rejected',
+                    reviewed_at = CURRENT_TIMESTAMP,
+                    reviewed_by = %s,
+                    reason = CASE 
+                        WHEN reason IS NULL OR reason = '' THEN %s 
+                        ELSE reason || ' [Rejection Reason: ' || %s || ']' 
+                    END
+                WHERE refund_id = %s;
+                """,
+                (reviewer, reason, reason, refund_id),
+            )
+
+            cur.execute(
+                """
+                INSERT INTO events (event_type, customer_id, order_id, refund_id, metadata, occurred_at)
+                VALUES ('refund_rejected', %s, %s, %s, %s::jsonb, CURRENT_TIMESTAMP);
+                """,
+                (
+                    customer_id,
+                    order_id,
+                    refund_id,
+                    json.dumps({"rejection_reason": reason, "reviewer": reviewer, "amount": float(amount)}),
+                ),
+            )
+            return True
+
+    if conn is not None:
+        return _execute(conn)
+    else:
+        with get_connection() as managed_conn:
+            return _execute(managed_conn)
+
+
 def execute_refund(
     refund_id: int,
     idempotency_key: str,

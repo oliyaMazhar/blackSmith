@@ -1,14 +1,16 @@
-# registry.py
+"""Deprecated compatibility shim for misspelled 'registery.py'.
 
-from models import ToolDefinition
-from tools.order import read_order
+Canonical tool registry is located at 'customer_support.registry'.
+This module re-exports all components from customer_support.registry.
+"""
 
-ORDER_READ = ToolDefinition(
-    name="order.read",
-    description="Read an order using its order ID.",
-    function=read_order,
-    permissions=["orders.read"],
-    risk_level="low",
-    reversible=True,
-    side_effect=False,
+import warnings
+from customer_support.registry import *
+from customer_support.registry import registry, get_registry
+
+warnings.warn(
+    "customer_support.registery is deprecated and will be removed. "
+    "Import from customer_support.registry instead.",
+    DeprecationWarning,
+    stacklevel=2,
 )
